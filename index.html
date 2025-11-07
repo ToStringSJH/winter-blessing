@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <link rel="dns-prefetch" href="//cdn.tailwindcss.com">
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    <title>立冬快乐！</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+
+        /* 硬件加速优化 */
+        .snowflake, .particle, .note {
+            will-change: transform, opacity;
+            transform: translateZ(0);
+        }
+
+        .snowflake {
+            position: fixed;
+            top: -10vh;
+            background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.1) 100%);
+            border-radius: 50%;
+            opacity: 0.9;
+            pointer-events: none;
+            z-index: 1;
+            box-shadow: 0 0 6px rgba(255,255,255,0.8);
+        }
+
+        .snowflake.large {
+            box-shadow: 0 0 12px rgba(255,255,255,0.9), inset 0 0 4px rgba(255,255,255,1);
+        }
+
+        .note {
+            position: absolute;
+            left: 50%;
+            top: 45%;
+            padding: 0.7rem 0.9rem;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(30, 64, 175, 0.15), 0 0 0 1px rgba(255,255,255,0.25);
+            transform: translate(-50%, -50%) translate(var(--x, 0), var(--y, 0)) rotate(var(--rotate, 0deg)) scale(0.8);
+            opacity: 0;
+            cursor: pointer;
+            max-width: 180px;
+            min-width: 120px;
+            backdrop-filter: blur(3px);
+            animation-fill-mode: forwards;
+            z-index: 10;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transform-style: preserve-3d;
+            word-wrap: break-word;
+            line-height: 1.3;
+            text-align: center;
+        }
+
+        .note.hoverable:hover {
+            transform: translate(-50%, -50%) translate(var(--x, 0), var(--y, 0)) rotate(0deg) scale(1.15) translateZ(20px);
+            z-index: 30;
+            box-shadow: 0 12px 30px rgba(30, 64, 175, 0.25), 0 4px 12px rgba(0,0,0,0.08), 0 0 0 2px rgba(255,255,255,0.3);
+        }
+
+        .note.is-visible {
+            animation: notePopIn 1.2s var(--pop-delay, 0s) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .note.is-leaving {
+            pointer-events: none;
+            animation: noteFlyHome 1s var(--leave-delay, 0s) cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        }
+
+        .note.note-tap {
+            animation: noteTap 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .note-red    { background: linear-gradient(145deg, #fff0f3, #ffe2e7, #ffb3ba); border: 2px solid #ef476f; color: #a61b38; }
+        .note-orange { background: linear-gradient(145deg, #fff4e6, #ffe1c6, #ffd5a3); border: 2px solid #ff7b00; color: #a44a02; }
+        .note-yellow { background: linear-gradient(145deg, #fffce6, #fff0b8, #ffe066); border: 2px solid #f2b705; color: #9c6501; }
+        .note-green  { background: linear-gradient(145deg, #ecfff4, #cfffdf, #a8e6cf); border: 2px solid #3ecf8e; color: #066344; }
+        .note-blue   { background: linear-gradient(145deg, #eef7ff, #d9eaff, #b8d4f0); border: 2px solid #3b82f6; color: #1e3a8a; }
+
+        .final-note {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0) rotate(-5deg);
+            padding: 3rem 4rem;
+            border-radius: 24px;
+            background: linear-gradient(145deg, #fff1fb, #fbd5e7, #f8bbd9);
+            border: 3px solid #db2777;
+            color: #701a75;
+            font-size: 2.2rem;
+            font-weight: 700;
+            box-shadow: 0 20px 50px rgba(219, 39, 119, 0.4), 0 0 0 1px rgba(255,255,255,0.3);
+            opacity: 0;
+            text-align: center;
+            line-height: 1.8;
+            z-index: 120;
+            backdrop-filter: blur(6px);
+        }
+
+        .final-note.heartbeat {
+            animation: heartbeat 2.5s ease-in-out infinite 0.8s;
+        }
+
+        .winter-title {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 3.5rem;
+            color: #1e3a8a;
+            font-weight: 800;
+            text-shadow: 4px 4px 12px rgba(30, 64, 175, 0.3), 0 0 20px rgba(255,255,255,0.8);
+            z-index: 60;
+            opacity: 0;
+            letter-spacing: 6px;
+            animation: titleGlow 3s ease-in-out infinite alternate;
+        }
+
+        .restart-btn {
+            position: absolute;
+            bottom: 36px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb, #1d4ed8);
+            color: #fff;
+            border: none;
+            border-radius: 999px;
+            font-size: 1.15rem;
+            font-weight: 600;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 0 12px 30px rgba(59, 130, 246, 0.4), 0 0 0 1px rgba(255,255,255,0.2);
+            z-index: 130;
+        }
+
+        .restart-btn:hover {
+            transform: translateX(-50%) scale(1.08) translateY(-2px);
+            box-shadow: 0 20px 45px rgba(59, 130, 246, 0.5), 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        /* 接受礼物按钮 - 突出显示 */
+        .accept-gift-btn {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px 40px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52, #dc4545);
+            color: #fff;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            opacity: 1;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 0 20px 60px rgba(255, 107, 107, 0.6), 0 0 0 1px rgba(255,255,255,0.3);
+            z-index: 200;
+            letter-spacing: 2px;
+            animation: giftBtnGlow 2s ease-in-out infinite alternate;
+        }
+
+        .accept-gift-btn:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+            box-shadow: 0 30px 80px rgba(255, 107, 107, 0.8), 0 0 0 2px rgba(255,255,255,0.5);
+        }
+
+        .accept-gift-btn:active {
+            transform: translate(-50%, -50%) scale(0.95);
+        }
+
+        .accept-gift-btn.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translate(-50%, -50%) scale(0.8);
+        }
+
+        /* 音乐控制面板 */
+        .music-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.3);
+            z-index: 150;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            border: 1px solid rgba(255,255,255,0.4);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .music-panel.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .volume-slider {
+            width: 100px;
+            height: 4px;
+            background: rgba(59, 130, 246, 0.2);
+            border-radius: 2px;
+            margin: 8px 0;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .volume-slider-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+            border-radius: 2px;
+            transition: width 0.2s ease;
+        }
+
+        .volume-slider-handle {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 12px;
+            background: #3b82f6;
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .volume-slider-handle:hover {
+            transform: translate(-50%, -50%) scale(1.2);
+        }
+
+        /* 粒子效果 */
+        .particle {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(59, 130, 246, 0.4) 100%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 5;
+            animation: particleFloat 4s ease-in-out infinite;
+        }
+
+        /* 移动端适配 - 平板 */
+        @media (max-width: 768px) {
+            .winter-title { 
+                font-size: 2.2rem; 
+                top: 15px; 
+                letter-spacing: 2px;
+                text-shadow: 2px 2px 8px rgba(30, 64, 175, 0.4), 0 0 15px rgba(255,255,255,0.9);
+            }
+            
+            .final-note { 
+                font-size: 1.6rem; 
+                padding: 2rem 2.5rem;
+                max-width: 90vw;
+            }
+            
+            .note { 
+                padding: 0.5rem 0.7rem; 
+                font-size: 0.75rem; 
+                max-width: 130px; 
+                min-width: 90px;
+                min-height: 60px;
+            }
+            
+            .restart-btn { 
+                font-size: 1rem; 
+                padding: 10px 20px; 
+                bottom: 20px;
+                border-radius: 25px;
+            }
+            
+            .accept-gift-btn { 
+                font-size: 1.1rem; 
+                padding: 14px 28px;
+                border-radius: 40px;
+            }
+            
+            .music-panel { 
+                top: 8px; 
+                right: 8px; 
+                padding: 10px;
+                border-radius: 12px;
+            }
+            
+            /* 减少动画复杂度 */
+            .bg-gradient-to-br {
+                animation-duration: 12s;
+            }
+        }
+
+        /* 移动端适配 - 小屏手机 */
+        @media (max-width: 480px) {
+            .winter-title { 
+                font-size: 2rem;
+                letter-spacing: 1px;
+            }
+            
+            .final-note { 
+                font-size: 1.4rem; 
+                padding: 1.8rem 2rem;
+            }
+            
+            .note { 
+                font-size: 0.7rem;
+                max-width: 120px;
+                padding: 0.4rem 0.6rem;
+            }
+            
+            .accept-gift-btn { 
+                font-size: 1rem; 
+                padding: 12px 24px;
+            }
+            
+            .music-panel { 
+                top: 5px; 
+                right: 5px; 
+                padding: 8px;
+            }
+        }
+
+        /* 优化的动画 */
+        @keyframes snowfall {
+            0%   { transform: translateY(-10vh) translateZ(0) rotate(0deg) scale(0.8); opacity: 0; }
+            10%  { opacity: 0.9; transform: translateZ(0) scale(1); }
+            60%  { opacity: 1; }
+            100% { transform: translateY(110vh) translateZ(0) rotate(720deg) scale(0.3); opacity: 0; }
+        }
+
+        @keyframes notePopIn {
+            0% {
+                transform: translate(-50%, -50%) translate(calc(var(--x, 0) * 1.3), calc(var(--y, 0) * 1.3)) rotate(var(--rotate, 0deg)) scale(0.2);
+                opacity: 0;
+                filter: blur(8px);
+            }
+            50% {
+                transform: translate(-50%, -50%) translate(var(--x, 0), var(--y, 0)) rotate(var(--rotate, 0deg)) scale(1.1);
+                opacity: 0.8;
+                filter: blur(2px);
+            }
+            100% {
+                transform: translate(-50%, -50%) translate(var(--x, 0), var(--y, 0)) rotate(var(--rotate, 0deg)) scale(1);
+                opacity: 1;
+                filter: blur(0px);
+            }
+        }
+
+        @keyframes noteFlyHome {
+            0% {
+                transform: translate(-50%, -50%) translate(var(--x, 0), var(--y, 0)) rotate(var(--rotate, 0deg)) scale(1);
+                opacity: 1;
+                filter: blur(0px);
+            }
+            50% {
+                transform: translate(-50%, -50%) translate(calc(var(--x, 0) * 0.3), calc(var(--y, 0) * 0.3)) rotate(180deg) scale(1.1);
+                opacity: 0.7;
+                filter: blur(2px);
+            }
+            100% {
+                transform: translate(-50%, -50%) translate(0, 0) rotate(360deg) scale(0.1);
+                opacity: 0;
+                filter: blur(4px);
+            }
+        }
+
+        @keyframes noteTap {
+            0%   { transform: translate(-50%, -50%) translate(var(--x, 0), var(--y, 0)) rotate(0deg) scale(1); }
+            30%  { transform: translate(-50%, -50%) translate(var(--x, 0), var(--y, 0)) rotate(0deg) scale(1.25) translateZ(30px); }
+            100% { transform: translate(-50%, -50%) translate(var(--x, 0), var(--y, 0)) rotate(0deg) scale(1); }
+        }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(-5deg); }
+            15% { transform: translate(-50%, -50%) scale(1.08) rotate(-3deg); }
+            30% { transform: translate(-50%, -50%) scale(1.05) rotate(-7deg); }
+            45% { transform: translate(-50%, -50%) scale(1.08) rotate(-3deg); }
+            60% { transform: translate(-50%, -50%) scale(1.02) rotate(-5deg); }
+        }
+
+        @keyframes titleGlow {
+            0% { text-shadow: 4px 4px 12px rgba(30, 64, 175, 0.3), 0 0 20px rgba(255,255,255,0.8); }
+            100% { text-shadow: 4px 4px 12px rgba(30, 64, 175, 0.5), 0 0 30px rgba(59, 130, 246, 0.6), 0 0 40px rgba(255,255,255,0.9); }
+        }
+
+        @keyframes particleFloat {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.8; }
+            90% { opacity: 0.8; }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        @keyframes bgShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        @keyframes giftBtnGlow {
+            0% { box-shadow: 0 20px 60px rgba(255, 107, 107, 0.6), 0 0 0 1px rgba(255,255,255,0.3); }
+            100% { box-shadow: 0 25px 70px rgba(255, 107, 107, 0.8), 0 0 0 2px rgba(255,255,255,0.5); }
+        }
+
+        /* 触摸设备优化 */
+        @media (hover: none) and (pointer: coarse) {
+            .note.hoverable:hover {
+                transform: none;
+            }
+            
+            .restart-btn:hover {
+                transform: translateX(-50%);
+            }
+            
+            .accept-gift-btn:hover {
+                transform: translate(-50%, -50%);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-indigo-100 to-sky-100 overflow-hidden h-screen w-screen relative">
+    <div class="bg-gradient-to-br from-purple-100/20 via-blue-200/30 to-cyan-100/20 absolute inset-0 animate-pulse"></div>
+    
+    <h1 class="winter-title">❄️ 立冬安康 ❄️</h1>
+    <div id="notes-container" class="w-full h-full relative z-20"></div>
+    <div class="final-note">天气冷了<br>记得按时吃饭呀 ❤️</div>
+    <button class="restart-btn" id="restartBtn">
+        <i class="fa fa-refresh mr-2"></i>重新播放
+    </button>
+
+    <!-- 接受立冬礼物按钮 -->
+    <button class="accept-gift-btn" id="acceptGiftBtn">
+        <i class="fa fa-gift mr-3"></i>接受立冬礼物
+    </button>
+
+    <!-- 音乐控制面板 -->
+    <div class="music-panel" id="musicPanel">
+        <div id="musicToggle" class="flex items-center justify-center w-full mb-3 px-4 py-2 bg-gradient-to-r from-indigo-500 to-blue-600 text-white rounded-lg cursor-pointer font-semibold transition-all duration-300 hover:from-indigo-600 hover:to-blue-700 shadow-lg">
+            <i class="fa fa-music mr-2"></i><span id="musicStatus">播放音乐</span>
+        </div>
+        
+        <div class="volume-control">
+            <div class="flex items-center text-xs text-gray-600 mb-1">
+                <i class="fa fa-volume-down mr-1"></i>音量
+            </div>
+            <div class="volume-slider" id="volumeSlider">
+                <div class="volume-slider-fill" id="volumeFill" style="width: 70%"></div>
+                <div class="volume-slider-handle" id="volumeHandle" style="left: 70%"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 设备检测函数
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                   window.innerWidth <= 768;
+        }
+
+        const noteColors = ['red', 'orange', 'yellow', 'green', 'blue'];
+        const winterNotes = [
+            "立冬到，添衣保暖别感冒",
+            "愿你冬日有暖阳，四季皆安康",
+            "记得喝碗热汤，暖身又暖心",
+            "立冬进补，来年打虎",
+            "寒来暑往，秋收冬藏",
+            "冬日漫漫，有我相伴",
+            "多吃饺子，冬至不冻耳朵",
+            "注意保暖，照顾好自己",
+            "立冬快乐，万事顺意",
+            "愿你冬日无寒，心中有暖",
+            "添件厚衣，抵御寒风",
+            "冬日里的小确幸，是温暖的陪伴",
+            "早睡早起，养精蓄锐",
+            "煮一壶热茶，暖一整个冬天",
+            "立冬已至，春天不远",
+            "愿你冬日温暖如春",
+            "立冬养生，从吃开始",
+            "寒冷的冬日，爱意绵长",
+            "冬日阳光，温暖你的心",
+            "立冬快乐，幸福常伴",
+            "多喝水，多运动，健康第一",
+            "冬日里的拥抱，最暖人心",
+            "立冬进补，营养均衡",
+            "愿你冬日无忧，生活美好",
+            "寒冷的冬日，有你真好",
+            "立冬养生，规律作息",
+            "冬日美食，温暖胃肠",
+            "愿你冬日快乐，幸福满满",
+            "立冬安康，万事如意",
+            "冬日里的思念，温暖如阳"
+        ];
+
+        let snowInitialized = false;
+        let particlesInitialized = false;
+        let noteElements = [];
+        let animationStarted = false;
+        const notesContainer = document.getElementById('notes-container');
+        const title = document.querySelector('.winter-title');
+        const finalNote = document.querySelector('.final-note');
+        const restartBtn = document.getElementById('restartBtn');
+        const acceptGiftBtn = document.getElementById('acceptGiftBtn');
+        const musicPanel = document.getElementById('musicPanel');
+        const musicToggle = document.getElementById('musicToggle');
+        const musicStatus = document.getElementById('musicStatus');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const volumeFill = document.getElementById('volumeFill');
+        const volumeHandle = document.getElementById('volumeHandle');
+
+        // 均匀网格分布算法 - 确保祝福语均匀分布在整个屏幕且不重叠
+        function generateUniformNotePositions(count) {
+            const positions = [];
+            const minDistance = 20; // 最小间距百分比
+            const maxAttempts = 100; // 每个位置的最大尝试次数
+
+            // 创建6x5的网格系统，覆盖整个屏幕（稍微留出边缘空间）
+            const gridCols = 6;
+            const gridRows = 5;
+            const totalCells = gridCols * gridRows;
+
+            // 计算每个网格单元的尺寸
+            const cellWidth = 90 / gridCols; // 屏幕宽度的90%，留出10%的边距
+            const cellHeight = 80 / gridRows; // 屏幕高度的80%，留出20%的边距
+
+            // 为每个祝福语分配网格位置
+            const notesPerCell = Math.ceil(count / totalCells);
+            let cellIndex = 0;
+            let noteInCell = 0;
+
+            for (let i = 0; i < count; i++) {
+                let attempts = 0;
+                let position = null;
+
+                while (attempts < maxAttempts) {
+                    // 计算当前网格单元的中心位置
+                    const currentCol = cellIndex % gridCols;
+                    const currentRow = Math.floor(cellIndex / gridCols);
+
+                    // 在网格单元内随机偏移
+                    const offsetX = (Math.random() - 0.5) * cellWidth * 0.8; // 80%的单元宽度作为随机范围
+                    const offsetY = (Math.random() - 0.5) * cellHeight * 0.8; // 80%的单元高度作为随机范围
+
+                    // 计算绝对位置（相对于屏幕中心）
+                    const centerX = (currentCol - gridCols / 2 + 0.5) * cellWidth;
+                    const centerY = (currentRow - gridRows / 2 + 0.5) * cellHeight;
+
+                    const x = centerX + offsetX;
+                    const y = centerY + offsetY;
+
+                    // 检查与其他位置的距离
+                    let isValid = true;
+                    for (const existingPos of positions) {
+                        const distance = Math.sqrt(
+                            Math.pow(x - existingPos.x, 2) + Math.pow(y - existingPos.y, 2)
+                        );
+                        if (distance < minDistance) {
+                            isValid = false;
+                            break;
+                        }
+                    }
+
+                    if (isValid) {
+                        position = { x, y };
+                        break;
+                    }
+
+                    attempts++;
+                }
+
+                // 如果在当前网格单元找不到合适位置，使用备用位置
+                if (!position) {
+                    // 在整个屏幕范围内随机选择位置，但要避开已有位置
+                    let found = false;
+                    while (!found && attempts < maxAttempts * 2) {
+                        const x = (Math.random() - 0.5) * 80; // -40到40的范围
+                        const y = (Math.random() - 0.5) * 70; // -35到35的范围
+
+                        let isValid = true;
+                        for (const existingPos of positions) {
+                            const distance = Math.sqrt(
+                                Math.pow(x - existingPos.x, 2) + Math.pow(y - existingPos.y, 2)
+                            );
+                            if (distance < minDistance) {
+                                isValid = false;
+                                break;
+                            }
+                        }
+
+                        if (isValid) {
+                            position = { x, y };
+                            found = true;
+                        }
+                        attempts++;
+                    }
+                }
+
+                // 如果还是找不到，使用螺旋分布作为最后手段
+                if (!position) {
+                    const angle = (i / count) * 4 * Math.PI; // 多圈螺旋
+                    const radius = 15 + (i % 4) * 6; // 逐渐增大的半径
+                    position = {
+                        x: Math.cos(angle) * radius,
+                        y: Math.sin(angle) * radius
+                    };
+                }
+
+                positions.push(position);
+
+                // 更新网格单元索引
+                noteInCell++;
+                if (noteInCell >= notesPerCell) {
+                    noteInCell = 0;
+                    cellIndex = (cellIndex + 1) % totalCells;
+                }
+            }
+
+            return positions;
+        }
+
+        // 创建优化后的雪花效果 - 移动端减少数量
+        function createSnowflakes() {
+            if (snowInitialized) return;
+            snowInitialized = true;
+            const isMobile = isMobileDevice();
+            const snowCount = isMobile ? 60 : 120; // 移动端减半
+
+            for (let i = 0; i < snowCount; i++) {
+                const snowflake = document.createElement('div');
+                snowflake.classList.add('snowflake');
+                
+                if (i < (isMobile ? 10 : 20)) snowflake.classList.add('large'); // 移动端减少大雪花数量
+                
+                const size = Math.random() * 6 + 2;
+                const duration = Math.random() * 12 + 8;
+                const delay = Math.random() * 8;
+                const leftPosition = Math.random() * 100;
+                const blur = Math.random() * 3;
+                const windOffset = Math.random() * 20 - 10;
+
+                snowflake.style.width = `${size}px`;
+                snowflake.style.height = `${size}px`;
+                snowflake.style.left = `${leftPosition}vw`;
+                snowflake.style.filter = `blur(${blur}px)`;
+                snowflake.style.setProperty('--wind-offset', `${windOffset}px`);
+                snowflake.style.animation = `snowfall ${duration}s linear infinite`;
+                snowflake.style.animationDelay = `${delay}s`;
+
+                document.body.appendChild(snowflake);
+            }
+        }
+
+        // 创建优化后的粒子效果 - 移动端减少数量
+        function createParticles() {
+            if (particlesInitialized) return;
+            particlesInitialized = true;
+            const isMobile = isMobileDevice();
+            const particleCount = isMobile ? 15 : 30; // 移动端减半
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                const size = Math.random() * 6 + 2;
+                const delay = Math.random() * 4;
+                const leftPosition = Math.random() * 100;
+                const topPosition = Math.random() * 100;
+                
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${leftPosition}vw`;
+                particle.style.top = `${topPosition}vh`;
+                particle.style.animationDelay = `${delay}s`;
+                
+                document.body.appendChild(particle);
+            }
+        }
+
+        function createNotes() {
+            notesContainer.innerHTML = '';
+            noteElements = [];
+
+            // 生成均匀分布的位置
+            const positions = generateUniformNotePositions(winterNotes.length);
+
+            winterNotes.forEach((text, index) => {
+                const note = document.createElement('div');
+                const colorClass = `note-${noteColors[Math.floor(Math.random() * noteColors.length)]}`;
+
+                note.className = `note ${colorClass}`;
+                note.dataset.index = index;
+
+                const position = positions[index];
+                const randomRotate = (Math.random() * 30 - 15).toFixed(2); // 稍微增加旋转范围
+
+                note.style.setProperty('--rotate', `${randomRotate}deg`);
+                note.style.setProperty('--x', `${position.x}vw`);
+                note.style.setProperty('--y', `${position.y}vh`);
+                note.style.setProperty('--pop-delay', `${index * 0.1}s`); // 稍微加快弹出速度
+
+                note.innerHTML = `<i class="fa fa-sticky-note mr-2"></i>${text}`;
+
+                notesContainer.appendChild(note);
+                noteElements.push(note);
+
+                requestAnimationFrame(() => {
+                    note.classList.add('is-visible', 'hoverable');
+                });
+
+                // 优化的触摸事件处理
+                const isMobile = isMobileDevice();
+                
+                if (isMobile) {
+                    // 移动端使用触摸事件
+                    note.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        // 添加触摸反馈
+                        note.style.transform += ' scale(1.1)';
+                        setTimeout(() => {
+                            note.style.transform = note.style.transform.replace(' scale(1.1)', '');
+                        }, 150);
+                    });
+                    
+                    note.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        if (note.classList.contains('is-leaving')) return;
+                        note.classList.remove('note-tap');
+                        void note.offsetWidth;
+                        note.classList.add('note-tap');
+                        setTimeout(() => note.classList.remove('note-tap'), 500);
+                    });
+                } else {
+                    // 桌面端使用点击事件
+                    note.addEventListener('click', () => {
+                        if (note.classList.contains('is-leaving')) return;
+                        note.classList.remove('note-tap');
+                        void note.offsetWidth;
+                        note.classList.add('note-tap');
+                        setTimeout(() => note.classList.remove('note-tap'), 500);
+                    });
+                }
+            });
+        }
+
+        function convergeNotes() {
+            noteElements.forEach((note, index) => {
+                note.style.setProperty('--leave-delay', `${index * 0.06}s`); // 进一步加快收敛速度
+                note.classList.remove('hoverable');
+                note.classList.add('is-leaving');
+            });
+
+            const totalDelay = noteElements.length * 70 + 1200; // 根据新算法调整总延迟
+            setTimeout(() => {
+                finalNote.style.opacity = 1;
+                finalNote.style.transform = 'translate(-50%, -50%) scale(1) rotate(0deg)';
+                finalNote.classList.add('heartbeat');
+                restartBtn.style.opacity = 1;
+            }, totalDelay);
+        }
+
+        function startAnimation() {
+            if (animationStarted) return;
+            animationStarted = true;
+
+            // 隐藏接受礼物按钮
+            acceptGiftBtn.classList.add('hidden');
+
+            // 显示音乐控制面板
+            musicPanel.classList.add('active');
+
+            restartBtn.style.opacity = 0;
+            finalNote.style.opacity = 0;
+            finalNote.style.transform = 'translate(-50%, -50%) scale(0) rotate(-5deg)';
+            finalNote.classList.remove('heartbeat');
+
+            title.style.opacity = 1;
+            
+            // 延迟初始化重元素以提升性能
+            setTimeout(() => {
+                createSnowflakes();
+                createParticles();
+            }, 500);
+            
+            createNotes();
+
+            const delayTime = winterNotes.length * 150 + 5000; // 根据新算法调整延迟
+            setTimeout(convergeNotes, delayTime);
+        }
+
+        function restartAnimation() {
+            noteElements.forEach(note => note.remove());
+            noteElements = [];
+            
+            restartBtn.style.opacity = 0;
+            finalNote.style.opacity = 0;
+            finalNote.style.transform = 'translate(-50%, -50%) scale(0) rotate(-5deg)';
+            finalNote.classList.remove('heartbeat');
+            
+            startAnimation();
+        }
+
+        // 接受礼物按钮事件 - 优化触摸
+        if (isMobileDevice()) {
+            acceptGiftBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                acceptGiftBtn.style.transform = 'translate(-50%, -50%) scale(0.95)';
+            });
+            
+            acceptGiftBtn.addEventListener('touchend', (e) => {
+                acceptGiftBtn.style.transform = 'translate(-50%, -50%) scale(1)';
+                startAnimationAndMusic();
+            });
+        } else {
+            acceptGiftBtn.addEventListener('click', () => {
+                startAnimationAndMusic();
+            });
+        }
+
+        // 同时开始动画和音乐
+        async function startAnimationAndMusic() {
+            // 开始动画
+            startAnimation();
+            
+            // 开始播放音乐
+            await startMusic();
+        }
+
+        restartBtn.addEventListener('click', restartAnimation);
+
+        /* 优化后的音乐控制系统 */
+        const bgm = new Audio('winter.mp3'); // 确保音频文件是MP3格式
+        bgm.loop = true; // 循环播放
+        bgm.preload = 'auto';
+        bgm.volume = 0.7; // 默认音量
+        let isPlaying = false;
+        let audioUnlocked = false;
+
+        async function startMusic() {
+            try {
+                bgm.currentTime = 0; // 重置播放位置
+                await bgm.play();
+                audioUnlocked = true;
+                isPlaying = true;
+                updateMusicUI();
+                console.log('音乐开始播放');
+            } catch (error) {
+                console.warn('音乐播放失败：', error);
+                alert('音乐播放失败，请检查音频文件或浏览器设置。');
+            }
+        }
+
+        async function toggleMusic() {
+            if (!audioUnlocked) {
+                await startMusic();
+                return;
+            }
+
+            if (bgm.paused) {
+                try {
+                    await bgm.play();
+                    isPlaying = true;
+                } catch (error) {
+                    console.warn('播放失败：', error);
+                    alert('音乐播放失败，请检查音频文件或浏览器设置。');
+                    isPlaying = false;
+                }
+            } else {
+                bgm.pause();
+                isPlaying = false;
+            }
+            updateMusicUI();
+        }
+
+        function updateMusicUI() {
+            if (isPlaying) {
+                musicToggle.classList.add('from-green-500', 'to-emerald-600', 'hover:from-green-600', 'hover:to-emerald-700');
+                musicToggle.classList.remove('from-indigo-500', 'to-blue-600', 'hover:from-indigo-600', 'hover:to-blue-700');
+                musicStatus.textContent = '暂停音乐';
+            } else {
+                musicToggle.classList.add('from-indigo-500', 'to-blue-600', 'hover:from-indigo-600', 'hover:to-blue-700');
+                musicToggle.classList.remove('from-green-500', 'to-emerald-600', 'hover:from-green-600', 'hover:to-emerald-700');
+                musicStatus.textContent = '播放音乐';
+            }
+        }
+
+        // 音量控制
+        let isDraggingVolume = false;
+
+        function updateVolume(position) {
+            const rect = volumeSlider.getBoundingClientRect();
+            const percentage = Math.max(0, Math.min(1, (position - rect.left) / rect.width));
+            bgm.volume = percentage;
+            volumeFill.style.width = `${percentage * 100}%`;
+            volumeHandle.style.left = `${percentage * 100}%`;
+        }
+
+        // 触摸和鼠标事件兼容
+        function addVolumeEventListeners() {
+            const isMobile = isMobileDevice();
+            
+            if (isMobile) {
+                volumeSlider.addEventListener('touchstart', (e) => {
+                    isDraggingVolume = true;
+                    updateVolume(e.touches[0].clientX);
+                });
+                
+                document.addEventListener('touchmove', (e) => {
+                    if (isDraggingVolume) {
+                        updateVolume(e.touches[0].clientX);
+                    }
+                });
+                
+                document.addEventListener('touchend', () => {
+                    isDraggingVolume = false;
+                });
+                
+                volumeSlider.addEventListener('touchend', (e) => {
+                    updateVolume(e.changedTouches[0].clientX);
+                });
+            } else {
+                volumeSlider.addEventListener('mousedown', (e) => {
+                    isDraggingVolume = true;
+                    updateVolume(e.clientX);
+                });
+                
+                document.addEventListener('mousemove', (e) => {
+                    if (isDraggingVolume) {
+                        updateVolume(e.clientX);
+                    }
+                });
+                
+                document.addEventListener('mouseup', () => {
+                    isDraggingVolume = false;
+                });
+                
+                volumeSlider.addEventListener('click', (e) => {
+                    updateVolume(e.clientX);
+                });
+            }
+        }
+
+        musicToggle.addEventListener('click', toggleMusic);
+
+        bgm.addEventListener('ended', () => {
+            if (bgm.loop) return;
+            isPlaying = false;
+            updateMusicUI();
+        });
+
+        bgm.addEventListener('error', () => {
+            musicStatus.innerHTML = '<i class="fa fa-exclamation-circle mr-2"></i>音乐加载失败';
+            musicToggle.style.pointerEvents = 'none';
+            musicToggle.classList.remove('hover:from-indigo-600', 'hover:to-blue-700');
+            alert('音乐文件加载失败，请检查音频文件格式和路径。建议将音频转换为MP3格式。');
+        });
+
+        // 页面可见性变化时暂停音乐和动画
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                // 页面不可见时暂停音乐
+                if (!bgm.paused) {
+                    bgm.pause();
+                    isPlaying = false;
+                    updateMusicUI();
+                }
+                
+                // 暂停动画以节省性能
+                document.body.style.animationPlayState = 'paused';
+                document.querySelectorAll('.snowflake').forEach(snow => {
+                    snow.style.animationPlayState = 'paused';
+                });
+                document.querySelectorAll('.particle').forEach(particle => {
+                    particle.style.animationPlayState = 'paused';
+                });
+            } else {
+                // 恢复动画
+                document.body.style.animationPlayState = 'running';
+                document.querySelectorAll('.snowflake').forEach(snow => {
+                    snow.style.animationPlayState = 'running';
+                });
+                document.querySelectorAll('.particle').forEach(particle => {
+                    particle.style.animationPlayState = 'running';
+                });
+            }
+        });
+
+        // 页面加载时的优化初始化
+        window.addEventListener('load', () => {
+            // 添加背景渐变动画
+            document.body.style.animation = 'bgShift 8s ease-in-out infinite';
+            
+            // 初始化音量控制事件
+            addVolumeEventListeners();
+            
+            // 延迟初始化重动画元素（已经在startAnimation中处理）
+        });
+
+        // 添加键盘快捷键
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (!animationStarted) {
+                    startAnimationAndMusic();
+                } else {
+                    toggleMusic();
+                }
+            } else if (e.code === 'KeyR' && e.ctrlKey) {
+                e.preventDefault();
+                restartAnimation();
+            }
+        });
+    </script>
+</body>
+</html>
